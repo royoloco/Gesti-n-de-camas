@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Camas</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #388E3C;
+        }
+
+        h1 {
+            font-size: 2.5em;
+        }
+
+        h2 {
+            margin: 20px 0;
+            color: #4CAF50;
+        }
+
+        section {
+            margin: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], select {
+            padding: 10px;
+            margin: 10px 0;
+            width: calc(100% - 22px);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        td {
+            background-color: #f9f9f9;
+        }
+
+        td.disponible {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        td.ocupada {
+            background-color: #f44336;
+            color: white;
+        }
+
+        td.en-proceso-de-salida {
+            background-color: #ffeb3b;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Gestión de Camas</h1>
+    </header>
+    <main>
+        <section>
+            <h2>Añadir Nueva Cama</h2>
+            <form id="formCama">
+                <input type="text" id="numero" placeholder="Número de cama" required>
+                <select id="estado" required>
+                    <option value="">Seleccione estado</option>
+                    <option value="disponible">Disponible (Verde)</option>
+                    <option value="ocupada">Ocupada (Rojo)</option>
+                    <option value="en-proceso-de-salida">En proceso de salida (Amarillo)</option>
+                </select>
+                <button type="submit">Agregar Cama</button>
+            </form>
+        </section>
+        <section>
+            <h2>Lista de Camas</h2>
+            <table id="tablaCamas">
+                <thead>
+                    <tr>
+                        <th>Número de Cama</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Las camas se añadirán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h2>Historial de Camas</h2>
+            <table id="tablaHistorial">
+                <thead>
+                    <tr>
+                        <th>Número de Cama</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- El historial se añadirá aquí dinámicamente -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <script>
+        const formCama = document.getElementById('formCama');
+        const tablaCamas = document.getElementById('tablaCamas').getElementsByTagName('tbody')[0];
+        const tablaHistorial = document.getElementById('tablaHistorial').getElementsByTagName('tbody')[0];
+
+        // Cargar las camas y el historial desde localStorage
+        document.addEventListener('DOMContentLoaded', cargarDatos);
+
+        formCama.addEventListener('submit', function (event) {
+            event.preventDefault();
+            const numero = document.getElementById('numero').value;
+            const estado = document.getElementById('estado').value;
+
+            // Guardar cama en localStorage
+            guardarCama(numero, estado);
+            agregarCamaATabla(numero, estado);
+            agregarHistorial(numero, estado);
+
+            formCama.reset();
+        });
+
+        function guardarCama(numero, estado) {
+            const camas = JSON.parse(localStorage.getItem('camas')) || [];
+            camas.push({ numero, estado });
+            localStorage.setItem('camas', JSON.stringify(camas));
+        }
+
+        function agregarCamaATabla(numero, estado) {
+            const fila = tablaCamas.insertRow();
+            fila.insertCell(0).innerText = numero;
+            fila.insertCell(1).innerText = estado;
+            fila.cells[1].className = estado.replace(/ /g, '-'); // Reemplaza espacios por guiones para la clase CSS
+            const accionesCell = fila.insertCell(2);
+            const btnEliminar = document.createElement('button');
+            btnEliminar.innerText = 'Eliminar';
+            btnEliminar.onclick = function () {
+                eliminarCama(fila, numero);
+            };
+            accionesCell.appendChild(btnEliminar);
+        }
+
+        function agregarHistorial(numero, estado) {
+            const fila = tablaHistorial.insertRow();
+            fila.insertCell(0).innerText = numero;
+            fila.insertCell(1).innerText = estado;
+        }
+
+        function cargarDatos() {
+            const camas = JSON.parse(localStorage.getItem('camas')) || [];
+            camas.forEach(cama => {
+                agregarCamaATabla(cama.numero, cama.estado);
+                agregarHistorial(cama.numero, cama.estado);
+            });
+        }
+
+        function eliminarCama(fila, numero) {
+            const camas = JSON.parse(localStorage.getItem('camas')) || [];
+            const nuevoEstado = camas.filter(cama => cama.numero !== numero);
+            localStorage.setItem('camas', JSON.stringify(nuevoEstado));
+            tablaCamas.deleteRow(fila.rowIndex - 1);
+        }
+    </script>
+</body>
+</html>
